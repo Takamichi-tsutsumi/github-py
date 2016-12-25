@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import itertools
 
 API_ROOT = 'https://api.github.com'
-API_TOKEN = '6e7fe2b9d8c6da31a832de88eb69922e63c04f9b'
+API_TOKEN = '4b03be50f7ec58e009cdd3d0affd41c52a90a039'
 USER = 'Takamichi-tsutsumi'
 
 

@@ -8,3 +8,5 @@ for d in developers:
     if remain < 100:
         time.sleep(reset - time.time())
     get_previous_projects(d)
+
+sql = 'SELECT full_name, age, size, commits, firm_involvement FROM repositories ORDER BY id LIMIT 150;'

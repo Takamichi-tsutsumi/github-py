@@ -16,6 +16,10 @@ def get_repository(repo_name):
         except NoRepositoryFound:
             return
         repo = Repositories.from_raw(raw_repo)
+        q = Repositories.select().where(Repositories.github == raw_repo["id"])
+        if q.count() == 1:
+            repo = q.first()
+
         # Save all contributors data and calculate commit count
         raw_contributors = api.fetch_all_contributors(repo_name)
         Developers.create_from_raw(raw_contributors)

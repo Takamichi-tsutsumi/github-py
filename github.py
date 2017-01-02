@@ -57,7 +57,11 @@ def calc_cohesion(repo, involvements):
             for q in projects_y:
                 if p.repository_id == q.repository_id and p.repository_id != repo.github:
                     count += 1
-    return count / (len(involvements) * (len(involvements) - 1))
+    if len(involvements) == 1:
+        molecule = 1
+    else:
+        molecule = (len(involvements) * (len(involvements) - 1))
+    return count / molecule
 
 
 def has_link(projects_x, projects_y, repo):

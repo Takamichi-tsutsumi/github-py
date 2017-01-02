@@ -25,7 +25,7 @@ class Developers(BaseModel):
     followers = IntegerField(null=True)
     followings = IntegerField(null=True)
     github = IntegerField(db_column='github_id', unique=True)
-    login = CharField(unique=True)
+    login = CharField()
     prev_downloaded = BooleanField(default=False)
 
     @classmethod

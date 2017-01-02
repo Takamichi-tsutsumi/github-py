@@ -1,6 +1,7 @@
 import api
 from api import NoRepositoryFound
 from itertools import combinations, product
+import time
 import networkx as nx
 from models import *
 
@@ -45,65 +46,63 @@ def get_previous_projects(developer):
         developer.save()
 
 
-def calc_cohesion(repo):
+#########################################################
+# Calculate network characteristics
+#########################################################
+
+def calc_cohesion(repo, involvements):
     count = 0
-    developers = \
-        Developers.select().join(Involvement)\
-        .where(Involvement.repository == repo)
-    developers = [d for d in developers]
-    for x, y in combinations(developers, 2):
-        print(x.login, y.login)
-        projects_x = [i.repository for i in\
-                      Involvement.select().where(Involvement.developer == x)]
-        projects_y = [i.repository for i in\
-                      Involvement.select().where(Involvement.developer == y)]
+    for projects_x, projects_y in combinations(involvements, 2):
         for p in projects_x:
-            if p in projects_y and p.github != repo.github:
-                count += 1
-    return count / (len(developers) * (len(developers) - 1))
+            for q in projects_y:
+                if p.repository_id == q.repository_id and p.repository_id != repo.github:
+                    count += 1
+    return count / (len(involvements) * (len(involvements) - 1))
 
 
-def has_connection(cx, cy):
-    link = 0
-    projects_x = [i.repository for i in
-                  Involvement.select().where(Involvement.developer == cx)]
-    projects_y = [i.repository for i in
-                  Involvement.select().where(Involvement.developer == cy)]
-    for i, j in product(projects_x, projects_y):
-        if i == j: link += 1
-    return link
+def has_link(projects_x, projects_y, repo):
+    for x in projects_x:
+        for y in projects_y:
+            if x.repository_id == y.repository_id and x.repository_id != repo.github:
+                return True
+    return False
 
 
-def link_of(contributors):
+def links_of(involvements, repo):
     links = []
-    for cx, cy in combinations(contributors, 2):
-        if has_connection(cx, cy) != 0:
-            links.append((cx.login, cy.login))
+    for projects_x, projects_y in combinations(involvements, 2):
+        link = 0
+        if has_link(projects_x, projects_y, repo):
+            links.append((projects_x[0].developer_id, projects_y[0].developer_id))
     return links
 
 
-def graph_of_contributors(contributors):
-    labels = [c.login for c in contributors]
-    links = link_of(contributors)
-    G = nx.Graph()
-    G.add_nodes_from(labels)
-    G.add_edges_from(links)
-    return G
-
-
-def calc_degree(repo):
-    developers = \
-        Developers.select().join(Involvement)\
-        .where(Involvement.repository == repo)
-    developers = [d for d in developers]
-    graph = graph_of_contributors(developers)
-    return graph.degree()[repo.manager.login]
+def calc_degree(repo, developers, involvements):
+    labels = [c.github for c in developers]
+    links = links_of(involvements, repo)
+    graph = nx.Graph()
+    graph.add_nodes_from(labels)
+    graph.add_edges_from(links)
+    return graph.degree()[repo.manager.github]
 
 
 def update_repo(repo):
+    print("Start updating repository:", repo.full_name)
+    t = time.time()
     if not repo.manager:
+        print("Querying Manager")
         manager = Developers.select().join(Involvement).where(Involvement.repository == repo).order_by(Involvement.commit_count).limit(1).first()
         repo.manager = manager
-    repo.internal_cohesion = calc_cohesion(repo)
-    repo.degree_centrality = calc_degree(repo)
+        print("Manager is ", manager.login)
+    developers = [d for d in Developers.select().join(Involvement)
+                  .where(Involvement.repository == repo)]
+    involvements = []  # nested array
+    print("Querying Involvement")
+    for d in developers:
+        involvements.append([i for i in Involvement.select().where(Involvement.developer == d)])
+    print("Calculationg cohesion")
+    repo.internal_cohesion = calc_cohesion(repo, involvements)
+    print("Calculationg degree centrality")
+    repo.degree_centrality = calc_degree(repo, developers, involvements)
     repo.save()
+    print("Finish Updating repo. \n  It took", time.time() - t, "sec")

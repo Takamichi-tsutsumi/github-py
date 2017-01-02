@@ -25,7 +25,11 @@ def api_get(url):
     """
     global API_TOKEN, USER
     res = requests.get(url, auth=(USER, API_TOKEN))
-    return res.json(), res.status_code
+    if res.status_code == 200:
+        return res.json(), res.status_code
+    else:
+        return [], res.status_code
+
 
 
 def rate_limit():

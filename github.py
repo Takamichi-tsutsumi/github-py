@@ -96,7 +96,11 @@ def update_repo(repo):
     if not repo.manager:
         print("Querying Manager")
         manager = Developers.select().join(Involvement).where(Involvement.repository == repo).order_by(Involvement.commit_count).limit(1).first()
-        repo.manager = manager
+        if manager:
+            repo.manager = manager
+        else:
+            return
+
         print("Manager is ", manager.login)
     developers = [d for d in Developers.select().join(Involvement)
                   .where(Involvement.repository == repo)]

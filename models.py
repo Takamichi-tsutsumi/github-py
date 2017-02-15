@@ -57,6 +57,7 @@ class Repositories(BaseModel):
     internal_cohesion = FloatField(null=True)
     manager = ForeignKeyField(db_column='manager_id', null=True, rel_model=Developers, to_field='github')
     size = IntegerField(null=True)
+    contributor_count = IntegerField(null=True)
 
     @classmethod
     def from_raw(cls, raw_data):

@@ -114,3 +114,9 @@ def update_repo(repo):
     repo.degree_centrality = calc_degree(repo, developers, involvements)
     repo.save()
     print("Finish Updating repo. \n  It took", time.time() - t, "sec")
+
+
+def member_count_of(repo):
+    count = Developers.select().join(Involvement).where(Involvement.repository == repo).count()
+    repo.contributor_count = count
+    repo.save()
